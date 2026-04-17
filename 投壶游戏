@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>投壶游戏 - 雅韵投壶</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', '华文楷书', 'Microsoft YaHei', '楷体', serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 古风装饰 */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(circle at 20% 40%, rgba(210, 180, 140, 0.08) 2%, transparent 2.5%),
+                              radial-gradient(circle at 80% 70%, rgba(210, 180, 140, 0.06) 1.5%, transparent 2%);
+            background-size: 40px 40px, 35px 35px;
+            pointer-events: none;
+        }
+
+        .game-container {
+            background: rgba(30, 20, 15, 0.65);
+            backdrop-filter: blur(3px);
+            border-radius: 64px;
+            padding: 20px 30px 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,240,0.2);
+            border: 1px solid rgba(210, 180, 140, 0.6);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 48px;
+            box-shadow: 0 12px 28px black, inset 0 0 0 2px rgba(230, 200, 120, 0.5);
+            cursor: grab;
+            background: #2b2118;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 40px;
+            margin-top: 18px;
+            padding: 10px 24px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+            color: #f9e7c2;
+            text-shadow: 2px 2px 0 #3a2a1e;
+            border: 1px solid #d4af6a;
+        }
+
+        .score-box, .arrows-box {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .score-box span, .arrows-box span {
+            color: #ffd966;
+            font-size: 36px;
+            margin-left: 12px;
+            background: #1e1a10;
+            padding: 4px 16px;
+            border-radius: 40px;
+            display: inline-block;
+            min-width: 80px;
+            text-align: center;
+            font-family: monospace;
+        }
+      .reset-btn {
+            background: #8b5a2b;
+            border: none;
+            color: #f9eec1;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 6px 28px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-family: '楷体', serif;
+            transition: 0.2s;
+            box-shadow: 0 4px 0 #4a2a12;
+            letter-spacing: 2px;
+        }
+
+        .reset-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #4a2a12;
+        }
+
+        .tip {
+            margin-top: 12px;
+            text-align: center;
+            color: #e9d6a7;
+            background: rgba(0,0,0,0.5);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            backdrop-filter: blur(2px);
+        }
+
+        @media (max-width: 700px) {
+            .game-container { padding: 12px 18px 20px; }
+            .score-box span, .arrows-box span { font-size: 26px; min-width: 60px; }
+            .reset-btn { font-size: 18px; padding: 4px 20px; }
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="900" height="550"></canvas>
+        <div class="info-panel">
+            <div class="score-box">🏆 投中 <span id="scoreValue">0</span></div>
+            <div class="arrows-box">🎯 剩余 <span id="arrowsValue">10</span></div>
+            <button class="reset-btn" id="resetGame">🪶 新的一局</button>
+        </div>
+        <div class="tip">✨ 鼠标拖拽向后拉 → 瞄准壶口 → 松开投矢 ✨</div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- 画布元素 -----
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ----- 游戏参数 -----
+        let score = 0;          // 投中次数
+        let arrowsLeft = 10;    // 剩余箭矢
+        let gameActive = true;   // 还有箭矢时才能投
+
+        // ----- 壶的位置（经典投壶造型）-----
+        const pot = {
+            x: 720,            // 靠右一些，向左投掷
+            y: 380,
+            mouthRadius: 28,    // 壶口半径（计分判定）
+            bodyBottomY: 490
+        };
+
+        // ----- 箭矢数据 -----
+        let arrows = [];        // 存储飞行中的箭矢 {x, y, vx, vy, active, rotation}
+
+        // ----- 拖拽投掷交互 -----
+        let dragging = false;
+        let startPoint = { x: 0, y: 0 };    // 鼠标按下的起点（canvas坐标）
+        let currentPoint = { x: 0, y: 0 };   // 当前鼠标位置
+// 投掷起点固定区域 (靠近左侧，模拟人站立位置)
+        const launchBase = { x: 150, y: 430 };
+
+        // 物理参数
+        const gravity = 0.55;
+        const airDrag = 0.99;
+        const maxPower = 24;        // 最大初速度
+        const minPower = 4;
+
+        // ----- UI 元素 -----
+        const scoreSpan = document.getElementById('scoreValue');
+        const arrowsSpan = document.getElementById('arrowsValue');
+
+        function updateUI() {
+            scoreSpan.innerText = score;
+            arrowsSpan.innerText = arrowsLeft;
+        }
+
+        // ----- 添加新箭矢（根据拖拽力度与方向）-----
+        function addArrow(velocityX, velocityY) {
+            if (!gameActive) return false;
+            if (arrowsLeft <= 0) return false;
+
+            arrows.push({
+                x: launchBase.x,
+                y: launchBase.y,
+                vx: velocityX,
+                vy: velocityY,
+                active: true,
+                rotation: 0,
+                age: 0
+            });
+            arrowsLeft--;
+            updateUI();
+
+            if (arrowsLeft === 0) {
+                gameActive = false;
+                setTimeout(() => {
+                    if(arrowsLeft === 0 && arrows.length === 0) {
+                        alert('🏮 矢尽弦歇 · 雅集暂毕 🏮\n点击“新的一局”继续投壶雅戏');
+                    }
+                }, 100);
+            }
+            return true;
+        }
+
+        // ----- 更新物理与碰撞（壶口计分）-----
+        function updatePhysics() {
+            for (let i = 0; i < arrows.length; i++) {
+                const a = arrows[i];
+                if (!a.active) continue;
+
+                // 欧拉积分
+                a.vx *= airDrag;
+                a.vy += gravity;
+                a.vy *= airDrag;
+
+                a.x += a.vx;
+                a.y += a.vy;
+
+                a.age++;
+                // 旋转效果：根据水平速度+下落
+                a.rotation = Math.atan2(a.vy, a.vx) * 180 / Math.PI + 90;
+
+                // 边界消除 (飞出画布太远或落地)
+                if (a.x > canvas.width + 100 || a.x < -100 || a.y > canvas.height + 120 || a.y < -80) {
+                    a.active = false;
+                    continue;
+                }
+       // 壶口碰撞检测 (圆靶心 + 角度宽容)
+                const dx = a.x - pot.x;
+                const dy = a.y - pot.y;
+                const distToMouth = Math.hypot(dx, dy);
+                // 进入壶口区域即得分，并且箭矢消失
+                if (distToMouth < pot.mouthRadius && a.vy > 0.5) { // 略微需要下落趋势才合理
+                    if (a.active) {
+                        a.active = false;
+                        score++;
+                        updateUI();
+                        // 增加清脆悦耳反馈（无声音，视觉强化）
+                        createSplashEffect(pot.x, pot.y);
+                    }
+                    continue;
+                }
+
+                // 碰到壶身（除壶口外弹性碰撞消除箭矢）
+                const bodyRadius = 42;
+                const distToBody = Math.hypot(dx, dy - 8);
+                if (distToBody < bodyRadius && distToMouth > pot.mouthRadius - 3) {
+                    if (a.active) {
+                        a.active = false;
+                        createTapEffect(a.x, a.y);
+                    }
+                    continue;
+                }
+
+                // 地面碰撞（简单消除）
+                if (a.y > canvas.height - 35 && a.vy > 0.2) {
+                    a.active = false;
+                    createTapEffect(a.x, a.y);
+                    continue;
+                }
+            }
+            // 移除失效箭矢
+            arrows = arrows.filter(a => a.active === true);
+        }
+
+        // ----- 视觉特效（水墨风格）-----
+        let effects = []; // {x, y, life}
+        function createSplashEffect(x, y) {
+            for(let i=0;i<8;i++){
+                effects.push({ x: x + (Math.random() - 0.5)*12, y: y + (Math.random() - 0.5)*12, life: 0.9 });
+            }
+        }
+        function createTapEffect(x, y) {
+            for(let i=0;i<4;i++){
+                effects.push({ x: x + (Math.random() - 0.5)*10, y: y + (Math.random() - 0.5)*8, life: 0.6 });
+            }
+        }
+        function updateEffects() {
+            for(let i=0;i<effects.length;i++){
+                effects[i].life -= 0.05;
+            }
+            effects = effects.filter(e => e.life > 0);
+        }
+
+        // ----- 绘制古雅投壶 + 箭矢 + 拖拽引导线 -----
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 背景 - 古代地毯质感
+            ctx.fillStyle = "#e8dbc0";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#c4aa7a";
+            for(let i=0;i<300;i++){
+                ctx.fillRect(20+i*37%canvas.width, canvas.height-45+Math.sin(i)*3, 2, 8);
+            }
+            // 木纹地台
+            ctx.fillStyle = "#b87c4f";
+            ctx.shadowBlur = 0;
+            ctx.fillRect(0, canvas.height-42, canvas.width, 42);
+            ctx.fillStyle = "#9b5e2e";
+            for(let i=0;i<20;i++){
+                ctx.fillRect(30+i*45, canvas.height-38, 20, 6);
+            }
+               // 绘制投壶 (雅致铜壶)
+            ctx.save();
+            ctx.shadowColor = "rgba(0,0,0,0.3)";
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.ellipse(pot.x, pot.y-12, 30, 24, 0, 0, Math.PI*2);
+            ctx.fillStyle = "#c1894b";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(pot.x, pot.y-30, 24, 18, 0, 0, Math.PI*2);
+            ctx.fillStyle = "#e0a86a";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(pot.x, pot.y-42, pot.mouthRadius, 15, 0, 0, Math.PI*2);
+            ctx.fillStyle = "#ca954c";
+            ctx.fill();
+            ctx.fillStyle = "#ab6f32";
+            ctx.beginPath();
+            ctx.ellipse(pot.x, pot.y-38, 14, 8, 0, 0, Math.PI*2);
+            ctx.fill();
+            // 壶耳
+            ctx.fillStyle = "#b5723a";
+            ctx.beginPath();
+            ctx.ellipse(pot.x-32, pot.y-18, 10, 8, -0.3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(pot.x+32, pot.y-18, 10, 8, 0.3, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 壶口高光
+            ctx.beginPath();
+            ctx.arc(pot.x-6, pot.y-45, 6, 0, Math.PI*2);
+            ctx.fillStyle = "#f7d99e";
+            ctx.fill();
+            ctx.restore();
+            
+            // 绘制所有箭矢（竹矢）
+            for (const a of arrows) {
+                ctx.save();
+                ctx.translate(a.x, a.y);
+                ctx.rotate(a.rotation * Math.PI/180);
+                ctx.beginPath();
+                ctx.moveTo(0, -18);
+                ctx.lineTo(4, -4);
+                ctx.lineTo(2, 20);
+                ctx.lineTo(0, 26);
+                ctx.lineTo(-2, 20);
+                ctx.lineTo(-4, -4);
+                ctx.fillStyle = "#aa7c52";
+                ctx.fill();
+                ctx.fillStyle = "#d4a373";
+                ctx.beginPath();
+                ctx.rect(-3, -14, 6, 12);
+                ctx.fill();
+                ctx.fillStyle = "#5c3e1f";
+                ctx.beginPath();
+                ctx.moveTo(0, -24);
+                ctx.lineTo(2, -14);
+                ctx.lineTo(-2, -14);
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            // 拖拽辅助线 + 力道指示
+            if (dragging) {
+                const dragVecX = startPoint.x - currentPoint.x;
+                const dragVecY = startPoint.y - currentPoint.y;
+                const power = Math.min(maxPower, Math.hypot(dragVecX, dragVecY) * 0.55);
+                const ratio = power / maxPower;
+                ctx.beginPath();
+                ctx.moveTo(launchBase.x, launchBase.y);
+                ctx.lineTo(currentPoint.x, currentPoint.y);
+                ctx.strokeStyle = `rgba(255, 200, 100, ${0.3+ratio*0.5})`;
+                ctx.lineWidth = 4 + ratio*6;
+                ctx.setLineDash([8, 6]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // 力道光晕
+                ctx.beginPath();
+                ctx.arc(launchBase.x, launchBase.y, 12+ratio*10, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(250, 210, 90, ${0.3+ratio*0.4})`;
+                ctx.fill();
+            }
+            
+            // 特效水墨点
+            for (const e of effects) {
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, 5 * (1-e.life)+2, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(80, 50, 20, ${e.life*0.6})`;
+                ctx.fill();
+            }
+            
+            // 额外古风文字
+            ctx.font = "bold 20 '楷体'";
+            ctx.fillStyle = "#fff1cf";
+            ctx.shadowBlur = 2;
+            ctx.fillText("⚡ 投壶雅戏 ⚡", 40, 70);
+            ctx.font = "14px '楷体'";
+            ctx.fillStyle = "#ecd89e";
+            ctx.fillText("矢从手中出 · 入壶为隽", 40, 112);
+        }
+        
+        // ----- 根据拖拽计算速度 -----
+        function computeVelocityFromDrag() {
+            const dx = startPoint.x - currentPoint.x;
+            const dy = startPoint.y - currentPoint.y;
+            let power = Math.hypot(dx, dy) * 0.55;
+            power = Math.min(maxPower, Math.max(minPower, power));
+            const angle = Math.atan2(dy, dx);
+            const vx = Math.cos(angle) * power;
+            const vy = Math.sin(angle) * power;
+            return { vx, vy, power };
+        }
+   // ----- 事件监听 -----
+        function getMouseCoord(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(canvas.width-10, Math.max(10, canvasX));
+            canvasY = Math.min(canvas.height-20, Math.max(20, canvasY));
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function onPointerDown(e) {
+            e.preventDefault();
+            if (!gameActive && arrowsLeft === 0) return;
+            const coord = getMouseCoord(e);
+            dragging = true;
+            startPoint.x = coord.x;
+            startPoint.y = coord.y;
+            currentPoint.x = coord.x;
+            currentPoint.y = coord.y;
+        }
+        
+        function onPointerMove(e) {
+            if (!dragging) return;
+            e.preventDefault();
+            const coord = getMouseCoord(e);
+            currentPoint.x = coord.x;
+            currentPoint.y = coord.y;
+        }
+        
+        function onPointerUp(e) {
+            if (!dragging) return;
+            dragging = false;
+            e.preventDefault();
+            if (!gameActive && arrowsLeft === 0) return;
+            const { vx, vy, power } = computeVelocityFromDrag();
+            if (power > minPower) {
+                addArrow(vx, vy);
+            }
+        }
+        
+        // 重置游戏
+        function resetGame() {
+            score = 0;
+            arrowsLeft = 10;
+            gameActive = true;
+            arrows = [];
+            effects = [];
+            updateUI();
+        }
+        
+        // ----- 动画循环 -----
+        function animate() {
+            updatePhysics();
+            updateEffects();
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            canvas.addEventListener('mousedown', onPointerDown);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+            canvas.addEventListener('touchstart', onPointerDown, {passive: false});
+            window.addEventListener('touchmove', onPointerMove, {passive: false});
+            window.addEventListener('touchend', onPointerUp);
+        }
+        
+        function init() {
+            bindEvents();
+            resetGame();
+            animate();
+            document.getElementById('resetGame').addEventListener('click', () => {
+                resetGame();
+            });
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>
