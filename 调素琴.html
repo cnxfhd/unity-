@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调素琴 · 雅韵斜阵 | 长弦余音</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #dcd3c6, #b8aa92);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', '华文楷体', 'KaiTi', 'Microsoft YaHei', serif;
+            padding: 16px;
+        }
+
+        /* 古筝主体 — 素雅本色，调素琴风格 */
+        .guzheng {
+            background: #9e8b70;  /* 哑光素木 */
+            background-image: repeating-linear-gradient(90deg, rgba(130, 100, 70, 0.2) 0px, rgba(130, 100, 70, 0.2) 10px, rgba(80, 60, 30, 0.1) 10px, rgba(80, 60, 30, 0.1) 20px),
+                              radial-gradient(circle at 30% 40%, #ccbb9e 8%, transparent 30%);
+            border-radius: 48px 48px 48px 48px;
+            padding: 30px 20px 30px 20px;
+            box-shadow: 0 20px 30px rgba(70, 50, 30, 0.5), inset 0 0 0 5px #dac29c, inset 0 0 30px #a18d6e;
+            border-right: 12px solid #7d684b;
+            max-width: 400px;
+            width: 100%;
+            height: 700px;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+        .guzheng:after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(200, 170, 130, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* 岳山 (上下枕木) — 温润如玉 */
+        .bridge-top, .bridge-bottom {
+            position: absolute;
+            left: 25px;
+            right: 25px;
+            height: 34px;
+            background: linear-gradient(to bottom, #e7d7b8, #baa27b);
+            border-radius: 40px;
+            box-shadow: inset -2px -4px 6px #5e4e36, inset 3px 3px 12px #fff5e0, 0 3px 0 #5f4e35;
+            border: 1px solid #eedbba;
+            z-index: 15;
+            transform: rotate(0.1deg);
+        }
+        .bridge-top {
+            top: 20px;
+        }
+        .bridge-bottom {
+            bottom: 20px;
+        }
+        .bridge-top::before, .bridge-bottom::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: rgba(0,0,0,0.1);
+            top: 12px;
+            box-shadow: 0 1px 3px #bba26b inset;
+        }
+
+        /* 长琴弦容器 */
+        .long-strings-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            justify-content: space-evenly;
+            padding: 48px 58px;
+        }
+
+        /* 弦 — 素弦 */
+        .long-string {
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to right, #e5ddc9, #b8a889, #e5ddc9);
+            box-shadow: 1px 0 0 0 #5e533a, 4px 0 12px rgba(60, 40, 20, 0.6), -1px 0 3px #dacaa2;
+            border-radius: 20px;
+            transition: 0.06s cubic-bezier(0.1, 1.2, 0.6, 1);
+            position: relative;
+            transform-origin: center;
+        }
+
+        .long-string.shake {
+            background: #f2ecd9;
+            box-shadow: 0 0 20px #cbae7a, 5px 0 15px #5f4e35, -3px 0 10px #dab882;
+            transform: scaleX(1.6) scaleY(1.02) translateX(-1px);
+            filter: blur(0.2px);
+            transition: 0.03s;
+        }
+
+        /* ---------- 交互层：雁柱斜线，且完全避开下方控制区 ---------- */
+        .interaction-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+        }
+
+        .interaction-unit {
+            position: absolute;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            height: 40px;
+            cursor: pointer;
+            transition: transform 0.08s ease;
+            filter: drop-shadow(1px 3px 5px #3f321e);
+            transform-origin: left center;
+            /* left, top 由js动态设定，形成斜线且不超出 */
+        }
+        .interaction-unit:active {
+            transform: translateX(6px) scale(1.01);
+            filter: drop-shadow(2px 5px 6px #ad9b78);
+        }
+
+        /* 雁柱 (琴码) — 更素简 */
+        .bridge-pin {
+            width: 30px;
+            height: 22px;
+            background: linear-gradient(145deg, #e2cfab, #ab8f60);
+            border-radius: 20% 40% 40% 20%;
+            box-shadow: 6px 0 0 #685437, inset -2px -2px 8px #947d51, inset 2px 2px 12px #faeacd;
+            border: 1px solid #efd7a9;
+            margin-right: 10px;
+            z-index: 22;
+            transform: skewX(-1deg);
+        }
+
+        /* 音阶铭牌 — 文人风格 */
+        .note-label {
+            background: #ede5d2e0;
+            backdrop-filter: blur(3px);
+            border: 1px solid #b29262;
+            border-radius: 30px;
+            padding: 5px 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #3d3221;
+            text-shadow: 0 1px 2px #fff0cf;
+            box-shadow: inset 0 1px 6px #ffeec6, 0 5px 0 #7b6849;
+            letter-spacing: 1px;
+            margin-left: 6px;
+            transform: rotate(-0.2deg);
+            font-family: 'Courier New', 'KaiTi', monospace;
+            transition: 0.1s;
+            white-space: nowrap;
+        }
+        .interaction-unit:active .note-label {
+            box-shadow: inset 0 1px 6px #ffeec6, 0 2px 0 #7b6849;
+            transform: translateY(3px) rotate(-0.2deg);
+        }
+
+        .meta-note {
+            font-size: 13px;
+            background: #dacfbbe0;
+            backdrop-filter: blur(2px);
+            color: #4a3e2b;
+            padding: 2px 14px;
+            border-radius: 30px;
+            border: 1px solid #a6895e;
+            margin-left: 8px;
+            font-weight: 400;
+            box-shadow: inset 0 1px 4px #bba26b;
+        }
+
+        /* 波纹特效 调素琴版 — 淡墨痕 */
+        .ripple {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(200, 170, 130, 0.7) 0%, rgba(140, 110, 70, 0.3) 70%, transparent 100%);
+            transform: translate(-50%, -50%) scale(0);
+            animation: ripplePop 0.6s ease-out forwards;
+            pointer-events: none;
+            z-index: 9999;
+            width: 90px;
+            height: 90px;
+            mix-blend-mode: multiply;
+        }
+
+        @keyframes ripplePop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(16); opacity: 0; }
+        }
+
+        /* 控制栏 — 素雅简洁 */
+        .controls {
+            position: absolute;
+            bottom: 18px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 10px;
+            color: #3f3627;
+            gap: 14px;
+            z-index: 30;
+        }
+
+        .key-hint {
+            background: #d8cfbce0;
+            backdrop-filter: blur(4px);
+            border-radius: 60px;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #9a896c;
+            box-shadow: inset 0 2px 8px #f7efdb, 0 5px 0 #766f5a;
+            text-align: center;
+            width: 100%;
+            transform: rotate(0.1deg);
+            color: #2f2a1f;
+        }
+        .key-hint kbd {
+            background: #f8f0da;
+            color: #2e281c;
+            border-radius: 26px;
+            padding: 5px 12px;
+            margin: 0 3px;
+            font-weight: 700;
+            border: 1px solid #b39563;
+            box-shadow: 0 3px 0 #7b6849, 0 0 6px #efe1c6;
+            display: inline-block;
+            font-size: 14px;
+            transition: 0.05s;
+        }
+        .key-hint kbd:active {
+            transform: translateY(3px);
+            box-shadow: 0 0px 0 #7b6849;
+        }
+
+        .btn-mute {
+            background: #af9b7c;
+            border: none;
+            color: #2f281b;
+            font-size: 22px;
+            font-weight: 500;
+            padding: 10px 36px;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #6e5d44, inset 0 2px 15px #f5e9d3;
+            transition: 0.08s;
+            border: 1px solid #cbb58b;
+            letter-spacing: 3px;
+            width: 70%;
+            font-family: 'KaiTi', serif;
+        }
+        .btn-mute:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #6e5d44, inset 0 3px 15px #ffeee0;
+        }
+
+        .status {
+            background: #ece3d4e0;
+            backdrop-filter: blur(4px);
+            padding: 10px 24px;
+            border-radius: 50px;
+            border-left: 6px solid #b3925f;
+            font-size: 17px;
+            color: #3d3221;
+            width: 100%;
+            text-align: center;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            box-shadow: 0 5px 0 #908568;
+            transition: background 0.2s;
+        }
+
+        .guzheng::before {
+            content: "🎋";
+            position: absolute;
+            top: 50%;
+            left: -4px;
+            transform: translateY(-50%) rotate(-3deg);
+            color: #7f6d4f;
+            font-size: 28px;
+            opacity: 0.35;
+            font-family: "华文楷体";
+            z-index: 25;
+        }
+        /* 调素琴 小印 */
+        .guzheng::after {
+            content: "调素琴";
+            position: absolute;
+            bottom: 10px;
+            right: 16px;
+            color: #63563d;
+            font-size: 14px;
+            opacity: 0.6;
+            font-family: "华文楷体";
+            letter-spacing: 2px;
+            transform: rotate(2deg);
+            z-index: 25;
+            background: #d8cbaf60;
+            padding: 2px 8px;
+            border-radius: 30px;
+            backdrop-filter: blur(2px);
+        }
+    </style>
+</head>
+<body>
+<div class="guzheng" id="guzhengBody">
+    <!-- 上下岳山 -->
+    <div class="bridge-top"></div>
+    <div class="bridge-bottom"></div>
+
+    <!-- 长琴弦容器 -->
+    <div id="longStringsContainer" class="long-strings-container"></div>
+
+    <!-- 交互层容器（斜线雁柱，绝对定位避开下方） -->
+    <div id="interactionContainer" class="interaction-container"></div>
+
+    <!-- 底部控制区 -->
+    <div class="controls">
+        <div class="key-hint" id="keyHint">
+            <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <kbd>;</kbd> <kbd>'</kbd> <kbd>Z</kbd> <kbd>X</kbd>
+        </div>
+        <button class="btn-mute" id="muteBtn">止弦 · 静</button>
+        <div class="status" id="status">🌿 调素琴 · 雁柱斜列</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // 音阶 (13弦)
+        const notes = [
+            { name: 'D2', solfege: '低·5', display: '5̲' },
+            { name: 'E2', solfege: '低·6', display: '6̲' },
+            { name: 'F#2',solfege: '低·7', display: '7̲' },
+            { name: 'G2', solfege: '·1',   display: '1' },
+            { name: 'A2', solfege: '·2',   display: '2' },
+            { name: 'B2', solfege: '·3',   display: '3' },
+            { name: 'C#3',solfege: '·4',   display: '4' },
+            { name: 'D3', solfege: '·5',   display: '5' },
+            { name: 'E3', solfege: '·6',   display: '6' },
+            { name: 'F#3',solfege: '·7',   display: '7' },
+            { name: 'G3', solfege: '高·1', display: '1̇' },
+            { name: 'A3', solfege: '高·2', display: '2̇' },
+            { name: 'B3', solfege: '高·3', display: '3̇' }
+        ];
+
+        const keyMap = [
+            'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon', 'Quote', 'KeyZ', 'KeyX'
+        ];
+
+        let audioCtx = null;
+        const activeOscillators = new Array(notes.length).fill(null);
+
+        const longStringsContainer = document.getElementById('longStringsContainer');
+        const interactionContainer = document.getElementById('interactionContainer');
+        const statusDiv = document.getElementById('status');
+        const guzhengBody = document.getElementById('guzhengBody');
+
+        function getFreq(noteName) {
+            const freqMap = {
+                'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50,
+                'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
+                'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61,
+                'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+            };
+            return freqMap[noteName] || 220.0;
+        }
+
+        // 构建长琴弦
+        function buildStrings() {
+            longStringsContainer.innerHTML = '';
+            notes.forEach((_, idx) => {
+                const longString = document.createElement('div');
+                longString.className = 'long-string';
+                longString.dataset.index = idx;
+                longStringsContainer.appendChild(longString);
+            });
+        }
+
+        // 构建斜线雁柱 — 绝对避开下方控制区 (底部120px为控制区，所以Y轴最高止于540)
+        function buildSlantedBridge() {
+            interactionContainer.innerHTML = '';
+
+            // 避开下方控制区：控制区高度约140px (从底部算起) => Y轴最高 700-140=560
+            // 同时最上方留出岳山空间 (top: 60px起)
+            const topBoundary = 70;        // 起始Y (避开上岳山)
+            const bottomBoundary = 540;     // 结束Y (确保不进入控制区, 控制区从560开始)
+            // X轴从左侧35到右侧300 (保持琴码在弦附近)
+            const leftBoundary = 45;
+            const rightBoundary = 300;
+
+            notes.forEach((note, idx) => {
+                const t = idx / (notes.length - 1); // 0~1
+                // Y轴: 从上到下 (斜率)
+                const y = topBoundary + t * (bottomBoundary - topBoundary);
+                // 同时X轴也随t线性增加，形成斜线
+                const x = leftBoundary + t * (rightBoundary - leftBoundary);
+
+                const unit = document.createElement('div');
+                unit.className = 'interaction-unit';
+                unit.dataset.index = idx;
+                unit.style.left = x + 'px';
+                unit.style.top = y + 'px';
+
+                // 琴码与标签
+                const pin = document.createElement('div');
+                pin.className = 'bridge-pin';
+
+                const label = document.createElement('div');
+                label.className = 'note-label';
+                label.textContent = note.display + ' ' + note.name;
+
+                const meta = document.createElement('div');
+                meta.className = 'meta-note';
+                meta.textContent = `弦${idx+1}`;
+
+                unit.appendChild(pin);
+                unit.appendChild(label);
+                unit.appendChild(meta);
+
+                unit.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    playStringByIdx(idx);
+                    const longString = document.querySelector(`.long-string[data-index="${idx}"]`);
+                    if (longString) {
+                        const rect = longString.getBoundingClientRect();
+                        showRipple(rect.left + rect.width/2, rect.top + rect.height/2);
+                    }
+                    guzhengBody.style.transform = 'scale(1.003)';
+                    setTimeout(() => guzhengBody.style.transform = 'scale(1)', 100);
+                });
+
+                interactionContainer.appendChild(unit);
+            });
+        }
+
+        // 播放音频
+        function playStringByIdx(index) {
+            if (index < 0 || index >= notes.length) return;
+
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    statusDiv.innerText = '❌ 音频不支持';
+                    return;
+                }
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            if (activeOscillators[index]) {
+                try { activeOscillators[index].stop(); } catch (e) {}
+                activeOscillators[index] = null;
+            }
+
+            const freq = getFreq(notes[index].name);
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';   
+            osc.frequency.value = freq;
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.28, now + 0.012);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 2.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            activeOscillators[index] = osc;
+            osc.onended = () => {
+                if (activeOscillators[index] === osc) activeOscillators[index] = null;
+            };
+
+            osc.start(now);
+            osc.stop(now + 2.5);
+
+            const longStrings = document.querySelectorAll(`.long-string[data-index="${index}"]`);
+            longStrings.forEach(el => {
+                el.classList.add('shake');
+                setTimeout(() => {
+                    if (el) el.style.transform = 'scaleX(1.15)';
+                }, 25);
+                setTimeout(() => {
+                    if (el) {
+                        el.style.transform = '';
+                        el.classList.remove('shake');
+                    }
+                }, 250);
+            });
+
+            guzhengBody.style.boxShadow = `0 20px 30px rgba(70, 50, 30, 0.5), inset 0 0 25px #ddc8a0, inset 0 0 0 5px #dac29c`;
+            setTimeout(() => {
+                guzhengBody.style.boxShadow = `0 20px 30px rgba(70, 50, 30, 0.5), inset 0 0 0 5px #dac29c, inset 0 0 30px #a18d6e`;
+            }, 300);
+
+            statusDiv.innerText = `🎶 弦${index+1} · ${notes[index].solfege} (${notes[index].name})   · 素琴雅音`;
+        }
+
+        function showRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        function onKeyDown(e) {
+            const code = e.code;
+            if (keyMap.includes(code)) {
+                e.preventDefault();
+                if (!audioCtx) {
+                    try { audioCtx = new AudioContext(); } catch (err) { return; }
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const idx = keyMap.indexOf(code);
+                if (idx !== -1) {
+                    playStringByIdx(idx);
+                    const longString = document.querySelector(`.long-string[data-index="${idx}"]`);
+                    if (longString) {
+                        const rect = longString.getBoundingClientRect();
+                        showRipple(rect.left + rect.width/2, rect.top + rect.height/2);
+                    }
+
+                    const kbdList = document.querySelectorAll('.key-hint kbd');
+                    if (kbdList[idx]) {
+                        kbdList[idx].style.transform = 'translateY(3px)';
+                        kbdList[idx].style.boxShadow = '0 1px 0 #7b6849';
+                        setTimeout(() => {
+                            kbdList[idx].style.transform = '';
+                            kbdList[idx].style.boxShadow = '0 3px 0 #7b6849, 0 0 6px #efe1c6';
+                        }, 100);
+                    }
+                }
+            }
+        }
+
+        function muteAll() {
+            activeOscillators.forEach((osc, i) => {
+                if (osc) {
+                    try { osc.stop(); } catch (e) {}
+                    activeOscillators[i] = null;
+                }
+            });
+            document.querySelectorAll('.long-string').forEach(el => {
+                el.classList.remove('shake');
+                el.style.transform = '';
+            });
+            statusDiv.innerText = '🍃 素琴静默 · 余音止';
+            guzhengBody.style.boxShadow = `0 20px 30px rgba(70, 50, 30, 0.5), inset 0 0 0 5px #dac29c, inset 0 0 30px #a18d6e`;
+        }
+
+        function wakeAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new AudioContext(); } catch (e) {}
+            } else if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        window.addEventListener('load', () => {
+            buildStrings();
+            buildSlantedBridge();  // 斜线雁柱，避开下方
+
+            window.addEventListener('keydown', onKeyDown);
+
+            document.getElementById('muteBtn').addEventListener('click', (e) => {
+                muteAll();
+                const rect = e.target.getBoundingClientRect();
+                showRipple(rect.left + rect.width/2, rect.top + rect.height/2);
+            });
+
+            document.body.addEventListener('click', function once() {
+                wakeAudio();
+            }, { once: true });
+        });
+    })();
+</script>
+</body>
+</html>
