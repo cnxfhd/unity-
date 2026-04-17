@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>兰亭 · 古风水墨 · 序文与建筑</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: '华文楷书', '楷体', 'Microsoft YaHei', serif;
+            background: #ece4d7;
+            color: #3e2e23;
+        }
+
+        .pages-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            overflow-y: auto;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* 水墨纹理背景 */
+        .page {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.06"><path fill="none" stroke="%233b2b1f" stroke-width="1.2" d="M150 200 Q250 150 300 220 T450 250 M100 500 Q180 480 220 550 T380 600 M500 800 Q580 750 620 830 T720 900" stroke-linecap="round"/><path d="M50 100 L100 70 L130 110 L90 140 Z" fill="%233b2b1f" opacity="0.3"/><circle cx="700" cy="200" r="40" fill="none" stroke="%233b2b1f" stroke-width="1" opacity="0.4"/><path d="M600 900 Q640 850 680 890 T750 950" stroke="%233b2b1f" fill="none" stroke-width="1.5" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+            background-color: #efe6d5;
+        }
+
+        /* 内容卡片 水墨晕染效果 */
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            max-width: 850px;
+            background: rgba(245, 240, 225, 0.88);
+            backdrop-filter: blur(3px);
+            border-radius: 48px 24px 56px 24px;
+            padding: 2rem 2.8rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #c9b896;
+            text-align: center;
+        }
+
+        /* 第一页：序文样式 */
+        .essay-title {
+            font-size: 2.6rem;
+            font-weight: bold;
+            letter-spacing: 0.3rem;
+            color: #5a3e2b;
+            border-bottom: 2px solid #b28b5e;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .essay-author {
+            font-size: 1rem;
+            color: #7d5d42;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .essay-content {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            text-align: justify;
+            text-indent: 2em;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        /* 自定义滚动条 */
+        .essay-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .essay-content::-webkit-scrollbar-track {
+            background: #d9cdb0;
+            border-radius: 4px;
+        }
+        .essay-content::-webkit-scrollbar-thumb {
+            background: #b28b5e;
+            border-radius: 4px;
+        }
+
+        /* 第二页：建筑介绍样式 */
+        .intro-title {
+            font-size: 2rem;
+            color: #5a3e2b;
+            margin-bottom: 1.2rem;
+            letter-spacing: 4px;
+        }
+
+        .intro-sub {
+            font-size: 0.9rem;
+            color: #8b6b48;
+            margin-bottom: 1.8rem;
+            border-top: 1px dashed #c9b896;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(235, 225, 205, 0.5);
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #b28b5e;
+        }
+
+        .feature-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #b4622a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.98rem;
+            line-height: 1.65;
+            color: #4a3828;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: #b4622a;
+            font-weight: bold;
+        }
+
+        /* 翻页提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 40, 30, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #f1e6cf;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            border: 1px solid #c9b58a;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-hint span {
+            display: inline-block;
+            margin: 0 6px;
+        }
+
+        .click-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #9b7a54;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 30;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(50, 40, 30, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #c9b58a;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            letter-spacing: 1px;
+            border: 1px solid rgba(201, 181, 138, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 680px) {
+            .card { width: 88%; padding: 1.2rem 1.2rem; }
+            .essay-title { font-size: 1.8rem; }
+            .essay-content { font-size: 0.85rem; line-height: 1.7; max-height: 55vh; }
+            .intro-title { font-size: 1.5rem; }
+            .feature-name { font-size: 1rem; }
+            .feature-desc { font-size: 0.85rem; }
+            .scroll-hint { font-size: 0.7rem; padding: 5px 16px; white-space: nowrap; }
+            .page-indicator { font-size: 0.7rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第一页：兰亭集序 -->
+    <div class="page page-1 active" id="page1">
+        <div class="card">
+            <div class="essay-title">兰亭集序</div>
+            <div class="essay-author">东晋 · 王羲之</div>
+            <div class="essay-content">
+                永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭，修禊事也。群贤毕至，少长咸集。此地有崇山峻岭，茂林修竹；又有清流激湍，映带左右，引以为流觞曲水，列坐其次。虽无丝竹管弦之盛，一觞一咏，亦足以畅叙幽情。<br><br>
+                是日也，天朗气清，惠风和畅。仰观宇宙之大，俯察品类之盛，所以游目骋怀，足以极视听之娱，信可乐也。<br><br>
+                夫人之相与，俯仰一世。或取诸怀抱，悟言一室之内；或因寄所托，放浪形骸之外。虽趣舍万殊，静躁不同，当其欣于所遇，暂得于己，快然自足，不知老之将至；及其所之既倦，情随事迁，感慨系之矣。向之所欣，俯仰之间，已为陈迹，犹不能不以之兴怀，况修短随化，终期于尽！古人云：“死生亦大矣。”岂不痛哉！<br><br>
+                每览昔人兴感之由，若合一契，未尝不临文嗟悼，不能喻之于怀。固知一死生为虚诞，齐彭殇为妄作。后之视今，亦犹今之视昔。悲夫！故列叙时人，录其所述，虽世殊事异，所以兴怀，其致一也。后之览者，亦将有感于斯文。
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二页：兰亭三大建筑结构 -->
+    <div class="page page-2" id="page2">
+        <div class="card">
+            <div class="intro-title">🏛️ 兰亭 · 建筑三绝</div>
+            <div class="intro-sub">曲水流觞 · 千古名亭</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">📍 流觞亭</div>
+                    <div class="feature-desc">
+                        兰亭核心建筑，面阔三间，单檐歇山顶，四周环以回廊。亭前有<span class="highlight">“曲水流觞”</span>遗迹，再现东晋文人雅集之境。亭内悬挂“流觞亭”匾额，两侧楹联<span class="highlight">“此地似曾游，想当年列坐流觞未尝无我；仙缘难逆料，问异日重来修禊能否逢君”</span>，意境悠远。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">📍 御碑亭</div>
+                    <div class="feature-desc">
+                        八角重檐结构，亭中矗立<span class="highlight">“御碑”</span>，碑阳镌刻清康熙帝临摹《兰亭集序》全文，碑阴为乾隆帝御笔<span class="highlight">《兰亭即事》</span>诗。祖孙两代皇帝同碑，世所罕见。亭顶<span class="highlight">攒尖式</span>，檐角飞翘，气势恢宏。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">📍 王右军祠</div>
+                    <div class="feature-desc">
+                        祠内<span class="highlight">“墨池”</span>传为王羲之洗笔处，池中建<span class="highlight">“墨华亭”</span>，两侧回廊陈列历代《兰亭》刻石。祠宇<span class="highlight">粉墙黛瓦</span>，江南庭院式布局，尽显<span class="highlight">“书圣”</span>遗风。每年书法朝圣仪式多在此举行。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 翻页提示 -->
+<div class="scroll-hint" id="scrollHint">
+    🖱️ 滚轮 <span>⬆️ 上一页</span>  ·  <span>⬇️ 下一页</span>
+</div>
+<div class="click-area" id="clickHint">📜 点击空白翻页</div>
+<div class="page-indicator" id="pageIndicator">1 / 2</div>
+
+<script>
+    // ---------- 页面翻页逻辑 ----------
+    let currentPage = 1;
+    const totalPages = 2;
+    const pageElements = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2')
+    };
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    let isScrolling = false;
+    let scrollTimer = null;
+    
+    function updateIndicator() {
+        pageIndicator.textContent = currentPage + ' / ' + totalPages;
+    }
+    
+    function switchToPage(pageNum) {
+        if (pageNum < 1 || pageNum > totalPages) return;
+        if (pageNum === currentPage) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            pageElements[i].classList.remove('active');
+        }
+        pageElements[pageNum].classList.add('active');
+        currentPage = pageNum;
+        updateIndicator();
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) switchToPage(currentPage + 1);
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) switchToPage(currentPage - 1);
+    }
+    
+    // 鼠标滚轮控制翻页
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+            nextPage();
+        } else if (e.deltaY < 0) {
+            prevPage();
+        }
+        
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => { isScrolling = false; }, 200);
+    }, { passive: false });
+    
+    // 点击空白区域辅助翻页
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('.card')) return;
+        nextPage();
+    });
+    
+    updateIndicator();
+    
+    console.log('%c🍃 兰亭 · 古风水墨双页展示 🍃', 'color: #b4622a; font-size: 14px;');
+    console.log('%c永和九年，岁在癸丑，暮春之初……', 'color: #7d5d42; font-size: 12px;');
+</script>
+</body>
+</html>

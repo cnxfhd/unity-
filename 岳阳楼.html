@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>岳阳楼 · 古风水墨 · 范仲淹</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: '华文楷书', '楷体', 'Microsoft YaHei', serif;
+            background: #ece4d7;
+            color: #3e2e23;
+        }
+
+        .pages-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            overflow-y: auto;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* 水墨纹理背景 */
+        .page {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.06"><path fill="none" stroke="%233b2b1f" stroke-width="1.2" d="M150 200 Q250 150 300 220 T450 250 M100 500 Q180 480 220 550 T380 600 M500 800 Q580 750 620 830 T720 900" stroke-linecap="round"/><path d="M50 100 L100 70 L130 110 L90 140 Z" fill="%233b2b1f" opacity="0.3"/><circle cx="700" cy="200" r="40" fill="none" stroke="%233b2b1f" stroke-width="1" opacity="0.4"/><path d="M600 900 Q640 850 680 890 T750 950" stroke="%233b2b1f" fill="none" stroke-width="1.5" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+            background-color: #efe6d5;
+        }
+
+        /* 内容卡片 水墨晕染效果 */
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            max-width: 800px;
+            background: rgba(245, 240, 225, 0.88);
+            backdrop-filter: blur(3px);
+            border-radius: 48px 24px 56px 24px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #c9b896;
+            text-align: center;
+        }
+
+        /* 第一页：文章样式 */
+        .essay-title {
+            font-size: 2.4rem;
+            font-weight: bold;
+            letter-spacing: 0.3rem;
+            color: #5a3e2b;
+            border-bottom: 2px solid #b28b5e;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .essay-author {
+            font-size: 1rem;
+            color: #7d5d42;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .essay-content {
+            font-size: 1.02rem;
+            line-height: 1.85;
+            text-align: justify;
+            text-indent: 2em;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .essay-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .essay-content::-webkit-scrollbar-track {
+            background: #d9cdb0;
+            border-radius: 4px;
+        }
+        .essay-content::-webkit-scrollbar-thumb {
+            background: #b28b5e;
+            border-radius: 4px;
+        }
+
+        /* 第二页：建筑介绍样式 */
+        .intro-title {
+            font-size: 2rem;
+            color: #5a3e2b;
+            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+        }
+
+        .intro-sub {
+            font-size: 0.9rem;
+            color: #8b6b48;
+            margin-bottom: 1.8rem;
+            border-top: 1px dashed #c9b896;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(235, 225, 205, 0.5);
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #b28b5e;
+        }
+
+        .feature-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #b4622a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            line-height: 1.65;
+            color: #4a3828;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: #b4622a;
+            font-weight: bold;
+        }
+
+        /* 翻页提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 40, 30, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #f1e6cf;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            border: 1px solid #c9b58a;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-hint span {
+            display: inline-block;
+            margin: 0 6px;
+        }
+
+        .click-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #9b7a54;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 30;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(50, 40, 30, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #c9b58a;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            letter-spacing: 1px;
+            border: 1px solid rgba(201, 181, 138, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 680px) {
+            .card { width: 88%; padding: 1.2rem 1.2rem; }
+            .essay-title { font-size: 1.8rem; }
+            .essay-content { font-size: 0.85rem; line-height: 1.7; max-height: 50vh; }
+            .intro-title { font-size: 1.5rem; }
+            .feature-name { font-size: 1rem; }
+            .feature-desc { font-size: 0.85rem; }
+            .scroll-hint { font-size: 0.7rem; padding: 5px 16px; white-space: nowrap; }
+            .page-indicator { font-size: 0.7rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第一页：岳阳楼记 -->
+    <div class="page page-1 active" id="page1">
+        <div class="card">
+            <div class="essay-title">岳阳楼记</div>
+            <div class="essay-author">北宋 · 范仲淹</div>
+            <div class="essay-content">
+                庆历四年春，滕子京谪守巴陵郡。越明年，政通人和，百废具兴，乃重修岳阳楼，增其旧制，刻唐贤今人诗赋于其上，属予作文以记之。<br><br>
+                予观夫巴陵胜状，在洞庭一湖。衔远山，吞长江，浩浩汤汤，横无际涯，朝晖夕阴，气象万千，此则岳阳楼之大观也，前人之述备矣。然则北通巫峡，南极潇湘，迁客骚人，多会于此，览物之情，得无异乎？<br><br>
+                若夫淫雨霏霏，连月不开，阴风怒号，浊浪排空，日星隐曜，山岳潜形，商旅不行，樯倾楫摧，薄暮冥冥，虎啸猿啼。登斯楼也，则有去国怀乡，忧谗畏讥，满目萧然，感极而悲者矣。<br><br>
+                至若春和景明，波澜不惊，上下天光，一碧万顷，沙鸥翔集，锦鳞游泳，岸芷汀兰，郁郁青青。而或长烟一空，皓月千里，浮光跃金，静影沉璧，渔歌互答，此乐何极！登斯楼也，则有心旷神怡，宠辱偕忘，把酒临风，其喜洋洋者矣。<br><br>
+                嗟夫！予尝求古仁人之心，或异二者之为，何哉？不以物喜，不以己悲，居庙堂之高则忧其民，处江湖之远则忧其君。是进亦忧，退亦忧。然则何时而乐耶？其必曰“先天下之忧而忧，后天下之乐而乐”乎！噫！微斯人，吾谁与归？<br><br>
+                时六年九月十五日。
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二页：岳阳楼三大建筑结构 -->
+    <div class="page page-2" id="page2">
+        <div class="card">
+            <div class="intro-title">🏯 岳阳楼 · 建筑三绝</div>
+            <div class="intro-sub">洞庭天下水 · 岳阳天下楼</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">🏛️ 三层三檐 · 纯木结构</div>
+                    <div class="feature-desc">
+                        岳阳楼为<span class="highlight">三层三檐</span>盔顶式建筑，高约20米。整楼<span class="highlight">未用一钉一铆</span>，全靠<span class="highlight">斗拱、立柱、枋椽</span>巧妙咬合，展现宋代木构建筑巅峰技艺。四根楠木金柱直贯楼顶，承载全楼重量，被誉为<span class="highlight">“江南三大名楼”</span>之首。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">🎓 盔顶形制 · 天下独绝</div>
+                    <div class="feature-desc">
+                        岳阳楼最独特之处在于<span class="highlight">“盔顶”</span>——屋顶形似古代将军头盔，棱角分明，威武雄壮。这种形制在中国古代建筑中<span class="highlight">极为罕见</span>，仅岳阳楼独有。盔顶由<span class="highlight">24条屋脊</span>组成，覆以黄色琉璃瓦，阳光下熠熠生辉。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">📜 一楼一记 · 千古名联</div>
+                    <div class="feature-desc">
+                        楼内珍藏<span class="highlight">《岳阳楼记》雕屏</span>，为清代书法家张照所书，堪称<span class="highlight">“文、书、刻”三绝</span>。一楼长联<span class="highlight">“一楼何奇？杜少陵五言绝唱，范希文两字关情……”</span>凡102字，道尽岳阳楼千年文脉。三楼更有毛泽东手书杜甫《登岳阳楼》诗，气韵磅礴。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 翻页提示 -->
+<div class="scroll-hint" id="scrollHint">
+    🖱️ 滚轮 <span>⬆️ 上一页</span>  ·  <span>⬇️ 下一页</span>
+</div>
+<div class="click-area" id="clickHint">📜 点击空白翻页</div>
+<div class="page-indicator" id="pageIndicator">1 / 2</div>
+
+<script>
+    // ---------- 页面翻页逻辑 ----------
+    let currentPage = 1;
+    const totalPages = 2;
+    const pageElements = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2')
+    };
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    let isScrolling = false;
+    let scrollTimer = null;
+    
+    function updateIndicator() {
+        pageIndicator.textContent = currentPage + ' / ' + totalPages;
+    }
+    
+    function switchToPage(pageNum) {
+        if (pageNum < 1 || pageNum > totalPages) return;
+        if (pageNum === currentPage) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            pageElements[i].classList.remove('active');
+        }
+        pageElements[pageNum].classList.add('active');
+        currentPage = pageNum;
+        updateIndicator();
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) switchToPage(currentPage + 1);
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) switchToPage(currentPage - 1);
+    }
+    
+    // 鼠标滚轮控制翻页
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+            nextPage();
+        } else if (e.deltaY < 0) {
+            prevPage();
+        }
+        
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => { isScrolling = false; }, 200);
+    }, { passive: false });
+    
+    // 点击空白区域辅助翻页
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('.card')) return;
+        nextPage();
+    });
+    
+    updateIndicator();
+    
+    console.log('%c🏯 岳阳楼 · 范仲淹 🏯', 'color: #b4622a; font-size: 14px;');
+    console.log('%c先天下之忧而忧，后天下之乐而乐', 'color: #7d5d42; font-size: 12px;');
+</script>
+</body>
+</html>

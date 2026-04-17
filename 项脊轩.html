@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>项脊轩 · 古风水墨 · 归有光</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: '华文楷书', '楷体', 'Microsoft YaHei', serif;
+            background: #ece4d7;
+            color: #3e2e23;
+        }
+
+        .pages-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            overflow-y: auto;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* 水墨纹理背景 */
+        .page {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.06"><path fill="none" stroke="%233b2b1f" stroke-width="1.2" d="M150 200 Q250 150 300 220 T450 250 M100 500 Q180 480 220 550 T380 600 M500 800 Q580 750 620 830 T720 900" stroke-linecap="round"/><path d="M50 100 L100 70 L130 110 L90 140 Z" fill="%233b2b1f" opacity="0.3"/><circle cx="700" cy="200" r="40" fill="none" stroke="%233b2b1f" stroke-width="1" opacity="0.4"/><path d="M600 900 Q640 850 680 890 T750 950" stroke="%233b2b1f" fill="none" stroke-width="1.5" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+            background-color: #efe6d5;
+        }
+
+        /* 内容卡片 水墨晕染效果 */
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            max-width: 800px;
+            background: rgba(245, 240, 225, 0.88);
+            backdrop-filter: blur(3px);
+            border-radius: 48px 24px 56px 24px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #c9b896;
+            text-align: center;
+        }
+
+        /* 第一页：文章样式 */
+        .essay-title {
+            font-size: 2.4rem;
+            font-weight: bold;
+            letter-spacing: 0.3rem;
+            color: #5a3e2b;
+            border-bottom: 2px solid #b28b5e;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .essay-author {
+            font-size: 1rem;
+            color: #7d5d42;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .essay-content {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            text-align: justify;
+            text-indent: 2em;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .essay-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .essay-content::-webkit-scrollbar-track {
+            background: #d9cdb0;
+            border-radius: 4px;
+        }
+        .essay-content::-webkit-scrollbar-thumb {
+            background: #b28b5e;
+            border-radius: 4px;
+        }
+
+        /* 第二页：建筑介绍样式 */
+        .intro-title {
+            font-size: 2rem;
+            color: #5a3e2b;
+            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+        }
+
+        .intro-sub {
+            font-size: 0.9rem;
+            color: #8b6b48;
+            margin-bottom: 1.8rem;
+            border-top: 1px dashed #c9b896;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(235, 225, 205, 0.5);
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #b28b5e;
+        }
+
+        .feature-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #b4622a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            line-height: 1.65;
+            color: #4a3828;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: #b4622a;
+            font-weight: bold;
+        }
+
+        /* 翻页提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 40, 30, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #f1e6cf;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            border: 1px solid #c9b58a;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-hint span {
+            display: inline-block;
+            margin: 0 6px;
+        }
+
+        .click-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #9b7a54;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 30;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(50, 40, 30, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #c9b58a;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            letter-spacing: 1px;
+            border: 1px solid rgba(201, 181, 138, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 680px) {
+            .card { width: 88%; padding: 1.2rem 1.2rem; }
+            .essay-title { font-size: 1.8rem; }
+            .essay-content { font-size: 0.85rem; line-height: 1.7; max-height: 50vh; }
+            .intro-title { font-size: 1.5rem; }
+            .feature-name { font-size: 1rem; }
+            .feature-desc { font-size: 0.85rem; }
+            .scroll-hint { font-size: 0.7rem; padding: 5px 16px; white-space: nowrap; }
+            .page-indicator { font-size: 0.7rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第一页：项脊轩志节选 -->
+    <div class="page page-1 active" id="page1">
+        <div class="card">
+            <div class="essay-title">项脊轩志</div>
+            <div class="essay-author">明 · 归有光</div>
+            <div class="essay-content">
+                项脊轩，旧南阁子也。室仅方丈，可容一人居。百年老屋，尘泥渗漉，雨泽下注；每移案，顾视，无可置者。又北向，不能得日，日过午已昏。余稍为修葺，使不上漏。前辟四窗，垣墙周庭，以当南日，日影反照，室始洞然。又杂植兰桂竹木于庭，旧时栏楯，亦遂增胜。借书满架，偃仰啸歌，冥然兀坐，万籁有声；而庭阶寂寂，小鸟时来啄食，人至不去。三五之夜，明月半墙，桂影斑驳，风移影动，珊珊可爱。<br><br>
+                然余居于此，多可喜，亦多可悲。先是庭中通南北为一。迨诸父异爨，内外多置小门，墙往往而是。东犬西吠，客逾庖而宴，鸡栖于厅。庭中始为篱，已为墙，凡再变矣。家有老妪，尝居于此。妪，先大母婢也，乳二世，先妣抚之甚厚。室西连于中闺，先妣尝一至。妪每谓余曰：“某所，而母立于兹。”妪又曰：“汝姊在吾怀，呱呱而泣；娘以指叩门扉曰：‘儿寒乎？欲食乎？’吾从板外相为应答。”语未毕，余泣，妪亦泣。余自束发，读书轩中，一日，大母过余曰：“吾儿，久不见若影，何竟日默默在此，大类女郎也？”比去，以手阖门，自语曰：“吾家读书久不效，儿之成，则可待乎！”顷之，持一象笏至，曰：“此吾祖太常公宣德间执此以朝，他日汝当用之！”瞻顾遗迹，如在昨日，令人长号不自禁。<br><br>
+                轩东故尝为厨，人往，从轩前过。余扃牖而居，久之，能以足音辨人。轩凡四遭火，得不焚，殆有神护者。……
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二页：项脊轩建筑/陈设三绝 -->
+    <div class="page page-2" id="page2">
+        <div class="card">
+            <div class="intro-title">🏡 项脊轩 · 三绝</div>
+            <div class="intro-sub">室仅方丈 · 百年老屋</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">📐 方丈之室</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“室仅方丈，可容一人居”</span>——项脊轩极小，仅一丈见方。但经归有光修葺，开窗植兰，<span class="highlight">“日影反照，室始洞然”</span>，小轩顿生幽雅之意。这种<span class="highlight">以小见大、以简胜繁</span>的空间布局，正是明代文人书斋的典型特征。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">🌿 兰桂竹木</div>
+                    <div class="feature-desc">
+                        归有光<span class="highlight">“杂植兰桂竹木于庭”</span>，兰象征幽雅，桂寓意高洁，竹代表气节。这些植物不仅美化庭院，更寄托了主人的<span class="highlight">人格理想</span>。加之<span class="highlight">“旧时栏楯”</span>，使小轩<span class="highlight">“亦遂增胜”</span>，成为读书静思的理想之所。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">📚 借书满架</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“借书满架，偃仰啸歌”</span>——项脊轩虽小，却藏书丰富。归有光在此<span class="highlight">“冥然兀坐，万籁有声”</span>，书架上层层叠叠的典籍，是精神世界的无限延伸。这种<span class="highlight">“室小心宽”</span>的境界，成为中国文人书斋文化的精髓。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 翻页提示 -->
+<div class="scroll-hint" id="scrollHint">
+    🖱️ 滚轮 <span>⬆️ 上一页</span>  ·  <span>⬇️ 下一页</span>
+</div>
+<div class="click-area" id="clickHint">📜 点击空白翻页</div>
+<div class="page-indicator" id="pageIndicator">1 / 2</div>
+
+<script>
+    // ---------- 页面翻页逻辑 ----------
+    let currentPage = 1;
+    const totalPages = 2;
+    const pageElements = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2')
+    };
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    let isScrolling = false;
+    let scrollTimer = null;
+    
+    function updateIndicator() {
+        pageIndicator.textContent = currentPage + ' / ' + totalPages;
+    }
+    
+    function switchToPage(pageNum) {
+        if (pageNum < 1 || pageNum > totalPages) return;
+        if (pageNum === currentPage) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            pageElements[i].classList.remove('active');
+        }
+        pageElements[pageNum].classList.add('active');
+        currentPage = pageNum;
+        updateIndicator();
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) switchToPage(currentPage + 1);
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) switchToPage(currentPage - 1);
+    }
+    
+    // 鼠标滚轮控制翻页
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+            nextPage();
+        } else if (e.deltaY < 0) {
+            prevPage();
+        }
+        
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => { isScrolling = false; }, 200);
+    }, { passive: false });
+    
+    // 点击空白区域辅助翻页
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('.card')) return;
+        nextPage();
+    });
+    
+    updateIndicator();
+    
+    console.log('%c🏡 项脊轩 · 归有光 🏡', 'color: #b4622a; font-size: 14px;');
+    console.log('%c庭有枇杷树，吾妻死之年所手植也，今已亭亭如盖矣。', 'color: #7d5d42; font-size: 12px;');
+</script>
+</body>
+</html>

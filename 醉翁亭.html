@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>醉翁亭记 · 古风水墨 · 欧阳修</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: '华文楷书', '楷体', 'Microsoft YaHei', serif;
+            background: #ece4d7;
+            color: #3e2e23;
+        }
+
+        .pages-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            overflow-y: auto;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* 水墨纹理背景 */
+        .page {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.06"><path fill="none" stroke="%233b2b1f" stroke-width="1.2" d="M150 200 Q250 150 300 220 T450 250 M100 500 Q180 480 220 550 T380 600 M500 800 Q580 750 620 830 T720 900" stroke-linecap="round"/><path d="M50 100 L100 70 L130 110 L90 140 Z" fill="%233b2b1f" opacity="0.3"/><circle cx="700" cy="200" r="40" fill="none" stroke="%233b2b1f" stroke-width="1" opacity="0.4"/><path d="M600 900 Q640 850 680 890 T750 950" stroke="%233b2b1f" fill="none" stroke-width="1.5" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+            background-color: #efe6d5;
+        }
+
+        /* 内容卡片 水墨晕染效果 */
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            max-width: 800px;
+            background: rgba(245, 240, 225, 0.88);
+            backdrop-filter: blur(3px);
+            border-radius: 48px 24px 56px 24px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #c9b896;
+            text-align: center;
+        }
+
+        /* 第一页：文章样式 */
+        .essay-title {
+            font-size: 2.4rem;
+            font-weight: bold;
+            letter-spacing: 0.3rem;
+            color: #5a3e2b;
+            border-bottom: 2px solid #b28b5e;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .essay-author {
+            font-size: 1rem;
+            color: #7d5d42;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .essay-content {
+            font-size: 1.02rem;
+            line-height: 1.85;
+            text-align: justify;
+            text-indent: 2em;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .essay-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .essay-content::-webkit-scrollbar-track {
+            background: #d9cdb0;
+            border-radius: 4px;
+        }
+        .essay-content::-webkit-scrollbar-thumb {
+            background: #b28b5e;
+            border-radius: 4px;
+        }
+
+        /* 第二页：建筑介绍样式 */
+        .intro-title {
+            font-size: 2rem;
+            color: #5a3e2b;
+            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+        }
+
+        .intro-sub {
+            font-size: 0.9rem;
+            color: #8b6b48;
+            margin-bottom: 1.8rem;
+            border-top: 1px dashed #c9b896;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(235, 225, 205, 0.5);
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #b28b5e;
+        }
+
+        .feature-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #b4622a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            line-height: 1.65;
+            color: #4a3828;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: #b4622a;
+            font-weight: bold;
+        }
+
+        /* 翻页提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 40, 30, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #f1e6cf;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            border: 1px solid #c9b58a;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-hint span {
+            display: inline-block;
+            margin: 0 6px;
+        }
+
+        .click-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #9b7a54;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 30;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(50, 40, 30, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #c9b58a;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            letter-spacing: 1px;
+            border: 1px solid rgba(201, 181, 138, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 680px) {
+            .card { width: 88%; padding: 1.2rem 1.2rem; }
+            .essay-title { font-size: 1.8rem; }
+            .essay-content { font-size: 0.85rem; line-height: 1.7; max-height: 50vh; }
+            .intro-title { font-size: 1.5rem; }
+            .feature-name { font-size: 1rem; }
+            .feature-desc { font-size: 0.85rem; }
+            .scroll-hint { font-size: 0.7rem; padding: 5px 16px; white-space: nowrap; }
+            .page-indicator { font-size: 0.7rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第一页：醉翁亭记节选 -->
+    <div class="page page-1 active" id="page1">
+        <div class="card">
+            <div class="essay-title">醉翁亭记</div>
+            <div class="essay-author">北宋 · 欧阳修</div>
+            <div class="essay-content">
+                环滁皆山也。其西南诸峰，林壑尤美，望之蔚然而深秀者，琅琊也。山行六七里，渐闻水声潺潺，而泻出于两峰之间者，酿泉也。峰回路转，有亭翼然临于泉上者，醉翁亭也。作亭者谁？山之僧智仙也。名之者谁？太守自谓也。太守与客来饮于此，饮少辄醉，而年又最高，故自号曰醉翁也。醉翁之意不在酒，在乎山水之间也。山水之乐，得之心而寓之酒也。<br><br>
+                若夫日出而林霏开，云归而岩穴暝，晦明变化者，山间之朝暮也。野芳发而幽香，佳木秀而繁阴，风霜高洁，水落而石出者，山间之四时也。朝而往，暮而归，四时之景不同，而乐亦无穷也。<br><br>
+                至于负者歌于途，行者休于树，前者呼，后者应，伛偻提携，往来而不绝者，滁人游也。临溪而渔，溪深而鱼肥；酿泉为酒，泉香而酒洌；山肴野蔌，杂然而前陈者，太守宴也。宴酣之乐，非丝非竹，射者中，弈者胜，觥筹交错，起坐而喧哗者，众宾欢也。苍颜白发，颓然乎其间者，太守醉也。<br><br>
+                已而夕阳在山，人影散乱，太守归而宾客从也。树林阴翳，鸣声上下，游人去而禽鸟乐也。然而禽鸟知山林之乐，而不知人之乐；人知从太守游而乐，而不知太守之乐其乐也。醉能同其乐，醒能述以文者，太守也。太守谓谁？庐陵欧阳修也。
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二页：醉翁亭三大建筑/景观特色 -->
+    <div class="page page-2" id="page2">
+        <div class="card">
+            <div class="intro-title">🍶 醉翁亭 · 三绝</div>
+            <div class="intro-sub">醉翁之意不在酒 · 在乎山水之间也</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">🏛️ 翼然之亭 · 飞檐翘角</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“有亭翼然临于泉上”</span>——醉翁亭最显著的建筑特征：<span class="highlight">四角飞檐</span>向四方伸展，形如飞鸟展翅，故名<span class="highlight">“翼然”</span>。亭为<span class="highlight">十六柱歇山顶</span>结构，檐角轻盈上翘，与酿泉、山石浑然一体，尽显宋代亭阁建筑之精巧。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">💧 酿泉环绕 · 临水筑亭</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“渐闻水声潺潺，而泻出于两峰之间者，酿泉也”</span>——醉翁亭依<span class="highlight">酿泉</span>而建，泉水清澈甘冽。欧阳修常与宾客<span class="highlight">“临溪而渔，酿泉为酒”</span>，亭与泉、溪构成<span class="highlight">“亭立泉上，水绕亭前”</span>的山水园林格局，体现<span class="highlight">“因山就水，巧于因借”</span>的造亭理念。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">🌲 四时之景 · 山水之乐</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“四时之景不同，而乐亦无穷也”</span>——醉翁亭四周：春有<span class="highlight">野芳幽香</span>，夏有<span class="highlight">佳木繁阴</span>，秋有<span class="highlight">风霜高洁</span>，冬有<span class="highlight">水落石出</span>。亭内设<span class="highlight">石桌石凳</span>，供游人休憩宴饮。这种<span class="highlight">“与民同乐”</span>的山水亭阁，成为中国园林文化的经典符号。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 翻页提示 -->
+<div class="scroll-hint" id="scrollHint">
+    🖱️ 滚轮 <span>⬆️ 上一页</span>  ·  <span>⬇️ 下一页</span>
+</div>
+<div class="click-area" id="clickHint">📜 点击空白翻页</div>
+<div class="page-indicator" id="pageIndicator">1 / 2</div>
+
+<script>
+    // ---------- 页面翻页逻辑 ----------
+    let currentPage = 1;
+    const totalPages = 2;
+    const pageElements = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2')
+    };
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    let isScrolling = false;
+    let scrollTimer = null;
+    
+    function updateIndicator() {
+        pageIndicator.textContent = currentPage + ' / ' + totalPages;
+    }
+    
+    function switchToPage(pageNum) {
+        if (pageNum < 1 || pageNum > totalPages) return;
+        if (pageNum === currentPage) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            pageElements[i].classList.remove('active');
+        }
+        pageElements[pageNum].classList.add('active');
+        currentPage = pageNum;
+        updateIndicator();
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) switchToPage(currentPage + 1);
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) switchToPage(currentPage - 1);
+    }
+    
+    // 鼠标滚轮控制翻页
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+            nextPage();
+        } else if (e.deltaY < 0) {
+            prevPage();
+        }
+        
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => { isScrolling = false; }, 200);
+    }, { passive: false });
+    
+    // 点击空白区域辅助翻页
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('.card')) return;
+        nextPage();
+    });
+    
+    updateIndicator();
+    
+    console.log('%c🍶 醉翁亭记 · 欧阳修 🍶', 'color: #b4622a; font-size: 14px;');
+    console.log('%c醉翁之意不在酒，在乎山水之间也', 'color: #7d5d42; font-size: 12px;');
+</script>
+</body>
+</html>

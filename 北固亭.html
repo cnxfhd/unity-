@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>北固亭 · 古风水墨 · 京口北固亭怀古</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: '华文楷书', '楷体', 'Microsoft YaHei', serif;
+            background: #ece4d7;
+            color: #3e2e23;
+        }
+
+        .pages-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            overflow-y: auto;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* 水墨纹理背景 */
+        .page {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.06"><path fill="none" stroke="%233b2b1f" stroke-width="1.2" d="M150 200 Q250 150 300 220 T450 250 M100 500 Q180 480 220 550 T380 600 M500 800 Q580 750 620 830 T720 900" stroke-linecap="round"/><path d="M50 100 L100 70 L130 110 L90 140 Z" fill="%233b2b1f" opacity="0.3"/><circle cx="700" cy="200" r="40" fill="none" stroke="%233b2b1f" stroke-width="1" opacity="0.4"/><path d="M600 900 Q640 850 680 890 T750 950" stroke="%233b2b1f" fill="none" stroke-width="1.5" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+            background-color: #efe6d5;
+        }
+
+        /* 内容卡片 水墨晕染效果 */
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            max-width: 800px;
+            background: rgba(245, 240, 225, 0.88);
+            backdrop-filter: blur(3px);
+            border-radius: 48px 24px 56px 24px;
+            padding: 2rem 2.8rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #c9b896;
+            text-align: center;
+        }
+
+        /* 第一页：诗词样式 */
+        .poem-title {
+            font-size: 2.4rem;
+            font-weight: bold;
+            letter-spacing: 0.2rem;
+            color: #5a3e2b;
+            border-bottom: 2px solid #b28b5e;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .poem-author {
+            font-size: 1rem;
+            color: #7d5d42;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .poem-content {
+            font-size: 1.15rem;
+            line-height: 2.0;
+            text-align: center;
+            white-space: pre-line;
+            font-weight: 500;
+        }
+
+        /* 第二页：建筑介绍样式 */
+        .intro-title {
+            font-size: 2rem;
+            color: #5a3e2b;
+            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+        }
+
+        .intro-sub {
+            font-size: 0.9rem;
+            color: #8b6b48;
+            margin-bottom: 1.8rem;
+            border-top: 1px dashed #c9b896;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(235, 225, 205, 0.5);
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #b28b5e;
+        }
+
+        .feature-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #b4622a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.98rem;
+            line-height: 1.65;
+            color: #4a3828;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: #b4622a;
+            font-weight: bold;
+        }
+
+        /* 翻页提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 40, 30, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #f1e6cf;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            border: 1px solid #c9b58a;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-hint span {
+            display: inline-block;
+            margin: 0 6px;
+        }
+
+        .click-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #9b7a54;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 30;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(50, 40, 30, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #c9b58a;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            letter-spacing: 1px;
+            border: 1px solid rgba(201, 181, 138, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 680px) {
+            .card { width: 88%; padding: 1.2rem 1.2rem; }
+            .poem-title { font-size: 1.6rem; }
+            .poem-content { font-size: 0.9rem; line-height: 1.8; }
+            .intro-title { font-size: 1.5rem; }
+            .feature-name { font-size: 1rem; }
+            .feature-desc { font-size: 0.85rem; }
+            .scroll-hint { font-size: 0.7rem; padding: 5px 16px; white-space: nowrap; }
+            .page-indicator { font-size: 0.7rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第一页：永遇乐·京口北固亭怀古 -->
+    <div class="page page-1 active" id="page1">
+        <div class="card">
+            <div class="poem-title">永遇乐·京口北固亭怀古</div>
+            <div class="poem-author">南宋 · 辛弃疾</div>
+            <div class="poem-content">
+                千古江山，英雄无觅孙仲谋处。<br>
+                舞榭歌台，风流总被雨打风吹去。<br>
+                斜阳草树，寻常巷陌，人道寄奴曾住。<br>
+                想当年，金戈铁马，气吞万里如虎。<br><br>
+                元嘉草草，封狼居胥，赢得仓皇北顾。<br>
+                四十三年，望中犹记，烽火扬州路。<br>
+                可堪回首，佛狸祠下，一片神鸦社鼓。<br>
+                凭谁问：廉颇老矣，尚能饭否？
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二页：北固亭（北固楼）三大建筑结构 -->
+    <div class="page page-2" id="page2">
+        <div class="card">
+            <div class="intro-title">🏯 北固亭 · 建筑三绝</div>
+            <div class="intro-sub">天下第一江山 · 京口北固楼</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">📍 北固楼</div>
+                    <div class="feature-desc">
+                        北固亭核心建筑，又称<span class="highlight">“北固楼”</span>，始建于东晋，雄踞北固山巅。楼为<span class="highlight">三层楼阁式</span>，飞檐翘角，气势恢宏。登楼远眺，金山、焦山尽收眼底，长江浩荡东去，素有<span class="highlight">“天下第一江山”</span>之美誉。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">📍 多景楼</div>
+                    <div class="feature-desc">
+                        位于北固山后峰，与北固楼遥相呼应。楼名取自李德裕<span class="highlight">“多景悬窗牖”</span>诗意，为<span class="highlight">二层重檐歇山顶</span>结构。宋代大书法家米芾曾题<span class="highlight">“天下江山第一楼”</span>匾额，是观江赏景绝佳之处。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">📍 祭江亭</div>
+                    <div class="feature-desc">
+                        又称<span class="highlight">“凌云亭”</span>，传说孙尚香在此祭奠刘备而得名。亭为<span class="highlight">六角攒尖顶</span>，石柱飞檐，古朴凝重。亭旁石壁镌刻<span class="highlight">“江山如画”</span>四字，凭栏可望长江天际流，怀古之情油然而生。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 翻页提示 -->
+<div class="scroll-hint" id="scrollHint">
+    🖱️ 滚轮 <span>⬆️ 上一页</span>  ·  <span>⬇️ 下一页</span>
+</div>
+<div class="click-area" id="clickHint">📜 点击空白翻页</div>
+<div class="page-indicator" id="pageIndicator">1 / 2</div>
+
+<script>
+    // ---------- 页面翻页逻辑 ----------
+    let currentPage = 1;
+    const totalPages = 2;
+    const pageElements = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2')
+    };
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    let isScrolling = false;
+    let scrollTimer = null;
+    
+    function updateIndicator() {
+        pageIndicator.textContent = currentPage + ' / ' + totalPages;
+    }
+    
+    function switchToPage(pageNum) {
+        if (pageNum < 1 || pageNum > totalPages) return;
+        if (pageNum === currentPage) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            pageElements[i].classList.remove('active');
+        }
+        pageElements[pageNum].classList.add('active');
+        currentPage = pageNum;
+        updateIndicator();
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) switchToPage(currentPage + 1);
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) switchToPage(currentPage - 1);
+    }
+    
+    // 鼠标滚轮控制翻页
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+            nextPage();
+        } else if (e.deltaY < 0) {
+            prevPage();
+        }
+        
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => { isScrolling = false; }, 200);
+    }, { passive: false });
+    
+    // 点击空白区域辅助翻页
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('.card')) return;
+        nextPage();
+    });
+    
+    updateIndicator();
+    
+    console.log('%c🏯 北固亭 · 京口北固亭怀古 🏯', 'color: #b4622a; font-size: 14px;');
+    console.log('%c千古江山，英雄无觅孙仲谋处……', 'color: #7d5d42; font-size: 12px;');
+</script>
+</body>
+</html>

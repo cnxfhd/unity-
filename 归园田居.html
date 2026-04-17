@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>归园田居 · 古风水墨 · 陶渊明</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: '华文楷书', '楷体', 'Microsoft YaHei', serif;
+            background: #ece4d7;
+            color: #3e2e23;
+        }
+
+        .pages-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.7s ease-in-out, visibility 0.7s;
+            overflow-y: auto;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        /* 水墨纹理背景 - 田园风格更淡雅 */
+        .page {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.05"><path fill="none" stroke="%233b2b1f" stroke-width="1.2" d="M150 200 Q250 150 300 220 T450 250 M100 500 Q180 480 220 550 T380 600 M500 800 Q580 750 620 830 T720 900" stroke-linecap="round"/><path d="M50 100 L100 70 L130 110 L90 140 Z" fill="%233b2b1f" opacity="0.25"/><circle cx="700" cy="200" r="40" fill="none" stroke="%233b2b1f" stroke-width="1" opacity="0.35"/><path d="M600 900 Q640 850 680 890 T750 950" stroke="%233b2b1f" fill="none" stroke-width="1.5" opacity="0.25"/><path d="M300 700 Q350 650 400 700" stroke="%233b2b1f" fill="none" stroke-width="1" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+            background-color: #efe6d5;
+        }
+
+        /* 内容卡片 水墨晕染效果 */
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            max-width: 750px;
+            background: rgba(245, 240, 225, 0.88);
+            backdrop-filter: blur(3px);
+            border-radius: 48px 24px 56px 24px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #c9b896;
+            text-align: center;
+        }
+
+        /* 第一页：诗词样式 */
+        .poem-title {
+            font-size: 2.4rem;
+            font-weight: bold;
+            letter-spacing: 0.3rem;
+            color: #5a3e2b;
+            border-bottom: 2px solid #b28b5e;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .poem-author {
+            font-size: 1rem;
+            color: #7d5d42;
+            margin-bottom: 1.8rem;
+            font-style: italic;
+        }
+
+        .poem-content {
+            font-size: 1.1rem;
+            line-height: 2.0;
+            text-align: center;
+            white-space: pre-line;
+            font-weight: 500;
+        }
+
+        /* 第二页：田园生活场景介绍 */
+        .intro-title {
+            font-size: 2rem;
+            color: #5a3e2b;
+            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+        }
+
+        .intro-sub {
+            font-size: 0.9rem;
+            color: #8b6b48;
+            margin-bottom: 1.8rem;
+            border-top: 1px dashed #c9b896;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(235, 225, 205, 0.5);
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #b28b5e;
+        }
+
+        .feature-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #b4622a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            line-height: 1.65;
+            color: #4a3828;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: #b4622a;
+            font-weight: bold;
+        }
+
+        /* 翻页提示 */
+        .scroll-hint {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 40, 30, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            color: #f1e6cf;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            border: 1px solid #c9b58a;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-hint span {
+            display: inline-block;
+            margin: 0 6px;
+        }
+
+        .click-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #9b7a54;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 30;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 页码指示器 */
+        .page-indicator {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(50, 40, 30, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #c9b58a;
+            font-size: 0.85rem;
+            font-family: monospace;
+            z-index: 99;
+            letter-spacing: 1px;
+            border: 1px solid rgba(201, 181, 138, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 680px) {
+            .card { width: 85%; padding: 1.2rem 1.5rem; }
+            .poem-title { font-size: 1.8rem; }
+            .poem-content { font-size: 0.9rem; line-height: 1.8; }
+            .intro-title { font-size: 1.5rem; }
+            .feature-name { font-size: 1rem; }
+            .feature-desc { font-size: 0.85rem; }
+            .scroll-hint { font-size: 0.7rem; padding: 5px 16px; white-space: nowrap; }
+            .page-indicator { font-size: 0.7rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第一页：归园田居·其一 -->
+    <div class="page page-1 active" id="page1">
+        <div class="card">
+            <div class="poem-title">归园田居·其一</div>
+            <div class="poem-author">东晋 · 陶渊明</div>
+            <div class="poem-content">
+                少无适俗韵，性本爱丘山。<br>
+                误落尘网中，一去三十年。<br>
+                羁鸟恋旧林，池鱼思故渊。<br>
+                开荒南野际，守拙归园田。<br>
+                方宅十余亩，草屋八九间。<br>
+                榆柳荫后檐，桃李罗堂前。<br>
+                暧暧远人村，依依墟里烟。<br>
+                狗吠深巷中，鸡鸣桑树颠。<br>
+                户庭无尘杂，虚室有余闲。<br>
+                久在樊笼里，复得返自然。
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二页：归园田居 · 三境 -->
+    <div class="page page-2" id="page2">
+        <div class="card">
+            <div class="intro-title">🌾 归园田居 · 三境</div>
+            <div class="intro-sub">久在樊笼里 · 复得返自然</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-name">🏡 方宅草屋 · 栖身之所</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“方宅十余亩，草屋八九间”</span>——陶渊明归隐后的居所，占地十余亩，有草屋八九间。虽不豪华，却足以安身立命。<span class="highlight">“榆柳荫后檐，桃李罗堂前”</span>，榆树柳树遮蔽后檐，桃树李树排列堂前，形成<span class="highlight">“前后果木，绿树成荫”</span>的田园院落格局。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">🌾 榆柳桃李 · 田园之景</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“榆柳荫后檐，桃李罗堂前”</span>——后檐榆柳成荫，堂前桃李芬芳。加之<span class="highlight">“暧暧远人村，依依墟里烟”</span>，远处村落隐约可见，炊烟袅袅升起。这种<span class="highlight">“远村近树，田园如画”</span>的景致，正是中国文人理想中的田园生活图景。
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-name">🐕 狗吠鸡鸣 · 烟火之气</div>
+                    <div class="feature-desc">
+                        <span class="highlight">“狗吠深巷中，鸡鸣桑树颠”</span>——深巷传来犬吠，桑树顶端鸡鸣。这看似平凡的农家声响，在陶渊明笔下却充满诗意。<span class="highlight">“户庭无尘杂，虚室有余闲”</span>，门庭没有尘俗杂事，静室之中安闲自在。这种<span class="highlight">“返璞归真，天人合一”</span>的境界，成为后世文人精神归隐的典范。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 翻页提示 -->
+<div class="scroll-hint" id="scrollHint">
+    🖱️ 滚轮 <span>⬆️ 上一页</span>  ·  <span>⬇️ 下一页</span>
+</div>
+<div class="click-area" id="clickHint">📜 点击空白翻页</div>
+<div class="page-indicator" id="pageIndicator">1 / 2</div>
+
+<script>
+    // ---------- 页面翻页逻辑 ----------
+    let currentPage = 1;
+    const totalPages = 2;
+    const pageElements = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2')
+    };
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    let isScrolling = false;
+    let scrollTimer = null;
+    
+    function updateIndicator() {
+        pageIndicator.textContent = currentPage + ' / ' + totalPages;
+    }
+    
+    function switchToPage(pageNum) {
+        if (pageNum < 1 || pageNum > totalPages) return;
+        if (pageNum === currentPage) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            pageElements[i].classList.remove('active');
+        }
+        pageElements[pageNum].classList.add('active');
+        currentPage = pageNum;
+        updateIndicator();
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) switchToPage(currentPage + 1);
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) switchToPage(currentPage - 1);
+    }
+    
+    // 鼠标滚轮控制翻页
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        if (e.deltaY > 0) {
+            nextPage();
+        } else if (e.deltaY < 0) {
+            prevPage();
+        }
+        
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => { isScrolling = false; }, 200);
+    }, { passive: false });
+    
+    // 点击空白区域辅助翻页
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('.card')) return;
+        nextPage();
+    });
+    
+    updateIndicator();
+    
+    console.log('%c🌾 归园田居 · 陶渊明 🌾', 'color: #b4622a; font-size: 14px;');
+    console.log('%c久在樊笼里，复得返自然', 'color: #7d5d42; font-size: 12px;');
+</script>
+</body>
+</html>
